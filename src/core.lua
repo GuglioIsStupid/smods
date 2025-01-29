@@ -1,8 +1,7 @@
 --- STEAMODDED CORE
 --- MODULE CORE
-
 SMODS = {}
-MODDED_VERSION = require'SMODS.version'
+MODDED_VERSION = require'smods.version'
 SMODS.id = 'Steamodded'
 SMODS.version = MODDED_VERSION:gsub('%-STEAMODDED', '')
 SMODS.can_load = true
@@ -10,9 +9,8 @@ SMODS.meta_mod = true
 SMODS.config_file = 'config.lua'
 
 -- Include lovely and nativefs modules
-local nativefs = require "nativefs"
-local lovely = require "lovely"
-local json = require "json"
+local nativefs = require "smods.libs.nativefs"
+local json = require "smods.libs.json"
 
 local lovely_mod_dir = lovely.mod_dir:gsub("/$", "")
 NFS = nativefs
@@ -61,7 +59,7 @@ local function find_self(directory, target_filename, target_line, depth)
     end
 end
 
-SMODS.path = find_self(SMODS.MODS_DIR, 'core.lua', '--- STEAMODDED CORE')
+SMODS.path = "smods/"
 
 for _, path in ipairs {
     "src/ui.lua",
@@ -73,5 +71,9 @@ for _, path in ipairs {
     "src/compat_0_9_8.lua",
     "src/loader.lua",
 } do
-    assert(load(NFS.read(SMODS.path..path), ('=[SMODS _ "%s"]'):format(path)))()
+    print(SMODS.path..path)
+    local mod_path = (SMODS.path..path):gsub("/", "."):gsub("%.lua$", "")
+    require(mod_path)
 end
+
+lovely.getAllMods()

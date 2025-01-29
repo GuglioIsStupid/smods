@@ -1024,7 +1024,7 @@ end
 local init_game_object_ref = Game.init_game_object
 function Game:init_game_object()
 	local t = init_game_object_ref(self)
-	for _, key in ipairs(SMODS.PokerHand.obj_buffer) do
+	for _, key in ipairs((SMODS.PokerHand or {}).obj_buffer or {}) do
 		t.hands[key] = {}
 		for k, v in pairs(SMODS.PokerHands[key]) do
 			-- G.GAME needs to be able to be serialized
