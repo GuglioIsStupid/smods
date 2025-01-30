@@ -7,7 +7,7 @@ function loadMods(modsDirectory)
     SMODS.Mods['Lovely'] = {
         id = 'Lovely',
         can_load = true,
-        version = require'lovely'.version,
+        version = lovely.version,
         meta_mod = true,
     }
     SMODS.Mods['Balatro'] = {
@@ -559,7 +559,7 @@ function loadMods(modsDirectory)
                 SMODS.current_mod = mod
                 if mod.outdated then
                     SMODS.compat_0_9_8.with_compat(function()
-                        mod.config = {}
+                        --mod.config = {}
                         assert(load(NFS.read(mod.path..mod.main_file), ('=[SMODS %s "%s"]'):format(mod.id, mod.main_file)))()
                         for k, v in pairs(SMODS.compat_0_9_8.init_queue) do
                             v()

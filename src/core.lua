@@ -7,6 +7,7 @@ SMODS.version = MODDED_VERSION:gsub('%-STEAMODDED', '')
 SMODS.can_load = true
 SMODS.meta_mod = true
 SMODS.config_file = 'config.lua'
+SMODS.config = love.filesystem.load("smods/" .. SMODS.config_file)()
 
 -- Include lovely and nativefs modules
 local nativefs = require "smods.libs.nativefs"
@@ -39,25 +40,6 @@ local function set_mods_dir()
     SMODS.MODS_DIR = lovely_mod_dir
 end
 set_mods_dir()
-
-local function find_self(directory, target_filename, target_line, depth)
-    depth = depth or 1
-    if depth > 3 then return end
-    for _, filename in ipairs(NFS.getDirectoryItems(directory)) do
-        local file_path = directory .. "/" .. filename
-        local file_type = NFS.getInfo(file_path).type
-        if file_type == 'directory' or file_type == 'symlink' then
-            local f = find_self(file_path, target_filename, target_line, depth+1)
-            if f then return f end
-        elseif filename == target_filename then
-            local first_line = NFS.read(file_path):match('^(.-)\n')
-            if first_line == target_line then
-                -- use parent directory
-                return directory:match('^(.+/)')
-            end
-        end
-    end
-end
 
 SMODS.path = "smods/"
 

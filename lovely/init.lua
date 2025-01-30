@@ -1,51 +1,78 @@
 local lovely = {}
 local path = ... .. "."
 local pathSlashes = path:gsub("%.", "/")
-local TOML = require(path .. "toml")
 
 lovely.mod_dir = love.filesystem.getSaveDirectory() .. "/Mods"
 love.filesystem.createDirectory("Patched")
 
-local tomlFiles = {}
-for i, file in ipairs(love.filesystem.getDirectoryItems(pathSlashes)) do
-    if file:sub(-5) == ".toml" then
-        table.insert(tomlFiles, file)
+local configFiles = {}
+for i, file in ipairs(love.filesystem.getDirectoryItems("smods/lovely/")) do
+    -- if file ends with .config.lua
+    if file:match(".config.lua$") then
+        table.insert(configFiles, love.filesystem.load("smods/lovely/" .. file)())
     end
 end
 
-local function parseToml(file, forcedDir)
-    forcedDir = forcedDir or pathSlashes
-    local txt = love.filesystem.read(forcedDir .. "/" .. file)
-    local mod = TOML(txt)
+local oldRead = love.filesystem.read
+function love.filesystem.read(path)
+    if love.filesystem.getInfo("Patched/" .. path) then
+        return oldRead("Patched/" .. path)
+    else
+        return oldRead(path)
+    end
+end
 
-    local manifest = mod.manifest
-    local patches = mod.patches
-    for i, v in ipairs(patches) do
-        for k, regex in ipairs(v.regex) do
-            local target = regex.target
-            local pattern = regex.pattern
-            -- replace <indent> with \t
-            local position = regex.position:gsub("<indent>", '\t')
-            local match_indent = regex.match_indent
-            local line_prepend = regex.line_prepend
-            local payload = regex.payload
-            local targetFile = love.filesystem.read(target)
+table.sort(configFiles, function(a, b)
+    return (a.priority or 0) > (b.priority or 0)
+end)
 
-            local newFile = targetFile:gsub(pattern, function(match)
-                if position == "before" then
-                    return line_prepend .. payload .. match
-                elseif position == "after" then
-                    return match .. line_prepend .. payload
-                end
-            end)
+local function parseConfigFile(file, forceDir)
+    forceDir = forceDir or "smods/lovely/"
 
-            love.filesystem.write("Patches/" .. target, newFile)
+    print("Parsing with priority " .. (file.priority or 0), "and version " .. (file.version or "unknown"), " with " .. #file.patches .. " patches")
+    for _, patch in ipairs(file.patches) do
+        local target = (patch.regex or patch.pattern).target or ""
+        local pattern = (patch.regex or patch.pattern).pattern or ""
+        local position = (patch.regex or patch.pattern).position or "at"
+        local line_prepend = (patch.regex or patch.pattern).line_prepend or ""
+
+        local payload = patch.payload
+
+        local file = love.filesystem.read(target)
+        local indent = file:match("^([ \t]*)")
+
+        print(pattern)
+        local newFile = file:gsub(pattern, function(match)
+            if position == "before" then
+                return payload .. "\n" .. indent .. match
+            elseif position == "after" then
+                return match .. "\n" .. indent .. payload
+            elseif position == "at" then
+                -- Do not include the match
+                return payload
+            end
+        end)
+
+        -- create all the subdirectories
+
+        local dirs = {}
+        for dir in target:gmatch("([^/]+)") do
+            table.insert(dirs, dir)
         end
+        table.remove(dirs, #dirs)
+        local dir = ""
+        for i, d in ipairs(dirs) do
+            dir = dir .. d .. "/"
+            love.filesystem.createDirectory("Patched/" .. dir)
+        end
+        
+        love.filesystem.write("Patched/" .. target, newFile)
+
+        -- lastly, load the file as normal
     end
 end
-
-for i, file in ipairs(tomlFiles) do
-    parseToml(file, "smods/lovely/")
+for i, file in ipairs(configFiles) do
+    parseConfigFile(file)
 end
 
 local function recursiveLoadLua(directory)
@@ -79,10 +106,8 @@ function lovely.getAllMods()
             love.filesystem.load(lovely.mod_dir .. "/" .. mod)()
         end
     end
-
-    for i, file in ipairs(tomlFiles) do
-        parseToml(file)
-    end
 end
+
+lovely.version = "1.0.0"
 
 return lovely
