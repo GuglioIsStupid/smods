@@ -358,9 +358,8 @@ Set `prefix_config.key = false` on your object instead.]]):format(obj.key), obj.
             -- language specific sprites override fully defined sprites only if that language is set
             if self.language and G.SETTINGS.language ~= self.language and G.SETTINGS.real_language ~= self.language then return end
             if not self.language and (self.obj_table[('%s_%s'):format(self.key, G.SETTINGS.language)] or self.obj_table[('%s_%s'):format(self.key, G.SETTINGS.real_language)]) then return end
-            self.full_path = (self.mod and self.mod.path or SMODS.path) ..
-                'assets/' .. G.SETTINGS.GRAPHICS.texture_scaling .. 'x/' .. file_path
-            local file_data = assert(NFS.newFileData(self.full_path),
+            self.full_path = "smods/assets/" .. G.SETTINGS.GRAPHICS.texture_scaling .. "x/" .. file_path
+            local file_data = assert(love.filesystem.newFileData(self.full_path),
                 ('Failed to collect file data for Atlas %s'):format(self.key))
             self.image_data = assert(love.image.newImageData(file_data),
                 ('Failed to initialize image data for Atlas %s'):format(self.key))
@@ -368,6 +367,9 @@ Set `prefix_config.key = false` on your object instead.]]):format(obj.key), obj.
                 { mipmaps = true, dpiscale = G.SETTINGS.GRAPHICS.texture_scaling })
             G[self.atlas_table][self.key_noloc or self.key] = self
 
+            if not SMODS.config.graphics_mipmap_level_options then
+                SMODS.config = love.filesystem.load("smods/" .. SMODS.config_file)()
+            end
             local mipmap_level = SMODS.config.graphics_mipmap_level_options[SMODS.config.graphics_mipmap_level]
             if not self.disable_mipmap and mipmap_level and mipmap_level > 0 then
                 self.image:setMipmapFilter('linear', mipmap_level)

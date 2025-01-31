@@ -25,7 +25,7 @@ return {
         {
             pattern = {
                 target = "tag.lua",
-                pattern = "function Tag:set_ability%()",
+                pattern = "function Tag:set_ability%(%s*%)",
                 position = "after",
                 match_indent = true
             },
@@ -38,11 +38,11 @@ return {
             ]]
         },
         {
-            regex = {
+            pattern = {
                 target = "functions/UI_definitions.lua",
-                pattern = "([%s]*)local tag_matrix = {",
+                pattern = "local tag_matrix = %{%}",
                 position = "at",
-                line_prepend = "$indent"
+                match_indent = true
             },
             payload = [[
 local tag_matrix = {}
@@ -66,11 +66,11 @@ end
             ]]
         },
         {
-            regex = {
+            pattern = {
                 target = "functions/UI_definitions.lua",
-                pattern = "([%s]*)v%.children%.alert%.states%.collide%.can = false\n[%s%S]+end\n[%s%S]+return true\n[%s%S]+end%)\n[%s%S]+%}",
+                pattern = "v%.children%.alert%.states%.collide%.can = false",
                 position = "after",
-                line_prepend = "$indent"
+                match_indent = true
             },
             payload = [[
 local table_nodes = {}
@@ -80,18 +80,18 @@ end
             ]]
         },
         {
-            regex = {
+            pattern = {
                 target = "functions/UI_definitions.lua",
-                pattern = "([%s]*){[%s%S]+{n=G%.UIT%.R, config={align = \"cm\"}, nodes=tag_matrix[1]},[%s%S]*tag_matrix[4]},[%s%S]+}",
+                pattern = "%{n=G%.UIT%.R, config=%{align = \"cm\"%}, nodes=tag_matrix%[1%]},",
                 position = "at",
-                line_prepend = "$indent"
+                match_indent = true
             },
             payload = "table_nodes"
         },
         {
-            regex = {
+            pattern = {
                 target = "tag.lua",
-                pattern = "G.ASSET_ATLAS%[%\"tags\"%]",
+                pattern = "G%.ASSET_ATLAS%[\"tags\"]",
                 position = "at"
             },
             payload = "G.ASSET_ATLAS[(not self.hide_ability) and G.P_TAGS[self.key].atlas or \"tags\"]"
@@ -108,29 +108,45 @@ end
         {
             pattern = {
                 target = "tag.lua",
-                pattern = "tag_sprite.ability_UIBox_table = generate_card_ui%(G.P_TAGS%[self.key%], nil, loc_vars, %(self.hide_ability%) and 'Undiscovered' or 'Tag', nil, %(self.hide_ability%)%)",
+                pattern = "tag_sprite%.ability_UIBox_table = generate_card_ui%(G%.P_TAGS%[self%.key%], nil, loc_vars, %(self%.hide_ability%) and 'Undiscovered' or 'Tag', nil, %(self%.hide_ability%)%)",
                 position = "at",
                 match_indent = true
             },
-            payload = "if vars_only then return loc_vars end\ntag_sprite.ability_UIBox_table = generate_card_ui(G.P_TAGS[self.key], nil, loc_vars, (self.hide_ability) and 'Undiscovered' or 'Tag', nil, (self.hide_ability), nil, nil, self)"
+            payload = [[
+if vars_only then return loc_vars end
+tag_sprite.ability_UIBox_table = generate_card_ui(G.P_TAGS[self.key], nil, loc_vars, (self.hide_ability) and 'Undiscovered' or 'Tag', nil, (self.hide_ability), nil, nil, self)
+            ]]
         },
         {
             pattern = {
                 target = "functions/common_events.lua",
-                pattern = "elseif _c.set == 'Tag' then",
+                pattern = "elseif _c%.set == 'Tag' then",
                 position = "after",
                 match_indent = true
             },
-            payload = "specific_vars = specific_vars or Tag.get_uibox_table({ name = _c.name, config = _c.config, ability = { orbital_hand = '['..localize('k_poker_hand')..']' }}, nil, true)"
+            payload = [[
+specific_vars = specific_vars or Tag.get_uibox_table({ name = _c.name, config = _c.config, ability = { orbital_hand = '['..localize('k_poker_hand')..']' }}, nil, true)
+            ]]
         },
         {
             pattern = {
                 target = "functions/button_callbacks.lua",
-                pattern = "G.FUNCS.reroll_boss = function%(e%)",
+                pattern = "G%.FUNCS%.reroll_boss = function%(e%)",
                 position = "after",
                 match_indent = true
             },
-            payload = "if not G.blind_select_opts then\n    G.GAME.round_resets.boss_rerolled = true\n    if not G.from_boss_tag then ease_dollars(-10) end\n    G.from_boss_tag = nil\n    G.GAME.round_resets.blind_choices.Boss = get_new_boss()\n    for i = 1, #G.GAME.tags do\n        if G.GAME.tags[i]:apply_to_run({type = 'new_blind_choice'}) then break end\n    end\n    return true\nend"
+            payload = [[
+if not G.blind_select_opts then
+    G.GAME.round_resets.boss_rerolled = true
+    if not G.from_boss_tag then ease_dollars(-10) end
+    G.from_boss_tag = nil
+    G.GAME.round_resets.blind_choices.Boss = get_new_boss()
+    for i = 1, #G.GAME.tags do
+        if G.GAME.tags[i]:apply_to_run({type = 'new_blind_choice'}) then break end
+    end
+    return true
+end
+            ]]
         }
     }
 }

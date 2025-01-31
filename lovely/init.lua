@@ -35,14 +35,14 @@ local function parseConfigFile(file, forceDir)
         local pattern = (patch.regex or patch.pattern).pattern or ""
         local position = (patch.regex or patch.pattern).position or "at"
         local line_prepend = (patch.regex or patch.pattern).line_prepend or ""
-
+        local findSpecificFunction = (patch.regex or patch.pattern).findSpecificFunction or false
         local payload = patch.payload
 
         local file = love.filesystem.read(target)
         local indent = file:match("^([ \t]*)")
 
         print(pattern)
-        local newFile = file:gsub(pattern, function(match)
+        --[[ local newFile = file:gsub(pattern, function(match)
             if position == "before" then
                 return payload .. "\n" .. indent .. match
             elseif position == "after" then
@@ -51,7 +51,65 @@ local function parseConfigFile(file, forceDir)
                 -- Do not include the match
                 return payload
             end
-        end)
+        end) ]]
+
+        -- if theres findSpecificFunction, then it can ONLY replace exacts inside the lua function
+        if findSpecificFunction then
+            local function findFunction(file, functionName)
+                local functionStart = file:find("function " .. functionName .. "%(")
+                if not functionStart then
+                    return nil
+                end
+                local functionEnd = file:find("end", functionStart)
+                if not functionEnd then
+                    return nil
+                end
+                return file:sub(functionStart, functionEnd)
+            end
+
+            local function replaceFunction(file, functionName, payload)
+                local functionStart = file:find("function " .. functionName .. "%(")
+                if not functionStart then
+                    return file
+                end
+                local functionEnd = file:find("end", functionStart)
+                if not functionEnd then
+                    return file
+                end
+                return file:sub(1, functionStart - 1) .. payload .. file:sub(functionEnd + 1)
+            end
+
+            local functionName = findSpecificFunction
+            local functionContents = findFunction(file, functionName)
+            if functionContents then
+                local newFunctionContents = functionContents:gsub(pattern, function(match)
+                    if position == "before" then
+                        return payload .. "\n" .. indent .. match
+                    elseif position == "after" then
+                        return match .. "\n" .. indent .. payload
+                    elseif position == "at" then
+                        -- Do not include the match
+                        return payload
+                    end
+                end)
+                newFile = replaceFunction(file, functionName, newFunctionContents)
+            else
+                print("Could not find function " .. functionName)
+                newFile = file
+            end
+        else
+            print(pattern)
+            newFile = file:gsub(pattern, function(match)
+                if position == "before" then
+                    return payload .. "\n" .. indent .. match
+                elseif position == "after" then
+                    return match .. "\n" .. indent .. payload
+                elseif position == "at" then
+                    -- Do not include the match
+                    return payload
+                end
+            end)
+        end
 
         -- create all the subdirectories
 

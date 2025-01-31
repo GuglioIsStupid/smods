@@ -9,6 +9,9 @@ SMODS.meta_mod = true
 SMODS.config_file = 'config.lua'
 SMODS.config = love.filesystem.load("smods/" .. SMODS.config_file)()
 
+-- merge all tables inside smods/localization/ and add it to localization/name lua tables
+
+
 -- Include lovely and nativefs modules
 local nativefs = require "smods.libs.nativefs"
 local json = require "smods.libs.json"

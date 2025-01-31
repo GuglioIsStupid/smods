@@ -8,7 +8,7 @@ return {
         {
             pattern = {
                 target = "game.lua",
-                pattern = "self.SPEEDFACTOR = 1",
+                pattern = "self%.SPEEDFACTOR = 1",
                 position = "after",
                 match_indent = true
             },
